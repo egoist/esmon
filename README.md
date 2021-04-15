@@ -32,6 +32,10 @@ esmon build your-scripts.ts
 
 This command will emit bundled script to `./dist` folder which filename matching the original filename. i.e. here you will get `./dist/your-script.js`.
 
+## Externals
+
+`dependencies` and `peerDependencies` are automatically excluded from the bundled scripts.
+
 ## License
 
 MIT &copy; [EGOIST](https://github.com/sponsors/egoist)

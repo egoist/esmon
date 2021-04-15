@@ -4,7 +4,20 @@ import { build as esbuild } from 'esbuild'
 import spawn from 'cross-spawn'
 import { watch } from 'chokidar'
 
+const readPkg = () => {
+  try {
+    return JSON.parse(fs.readFileSync(path.resolve('package.json'), 'utf8'))
+  } catch (err) {
+    return {}
+  }
+}
+
 export const build = async (file: string, outDir: string) => {
+  const pkg = readPkg()
+  const externals = [
+    ...Object.keys(pkg.dependencies || {}),
+    ...Object.keys(pkg.peerDependencies || {}),
+  ]
   const result = await esbuild({
     entryPoints: [file],
     format: 'cjs',
@@ -14,6 +27,27 @@ export const build = async (file: string, outDir: string) => {
     metafile: true,
     write: false,
     target: `node${process.version.slice(1)}`,
+    plugins: [
+      {
+        name: 'externalize-deps',
+        setup(build) {
+          build.onResolve({ filter: /.+/ }, (args) => {
+            if (
+              externals.some(
+                (external) =>
+                  args.path === external ||
+                  args.path.startsWith(`${external}/`),
+              )
+            ) {
+              return {
+                path: args.path,
+                external: true,
+              }
+            }
+          })
+        },
+      },
+    ],
   })
   const output = result.outputFiles[0]
   fs.mkdirSync(path.dirname(output.path), { recursive: true })
