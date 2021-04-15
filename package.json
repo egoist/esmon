@@ -1,22 +1,18 @@
 {
-  "name": "my-ts-lib",
+  "name": "esmon",
   "version": "0.0.0",
-  "description": "My awesome typescript library",
+  "description": "Like nodemon but very esbuild",
   "publishConfig": {
     "access": "public"
   },
   "files": [
     "dist"
   ],
+  "bin": "./dist/cli.js",
   "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
-  "exports": {
-    "require": "./dist/index.js",
-    "import": "./dist/index.mjs"
-  },
   "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts-resolve",
+    "build": "tsup src/cli.ts src/index.ts --format cjs --dts-resolve",
     "test": "jest",
     "prepublishOnly": "npm run build"
   },
@@ -24,10 +20,17 @@
   "devDependencies": {
     "@egoist/prettier-config": "^0.1.0",
     "@sucrase/jest-plugin": "^2.0.0",
+    "@types/cross-spawn": "^6.0.2",
     "@types/jest": "^26.0.20",
+    "cac": "^6.7.2",
     "jest": "^26.6.3",
     "prettier": "^2.2.1",
     "tsup": "^4.8.4",
     "typescript": "^4.2.3"
+  },
+  "dependencies": {
+    "chokidar": "^3.5.1",
+    "cross-spawn": "^7.0.3",
+    "esbuild": "^0.11.11"
   }
 }
