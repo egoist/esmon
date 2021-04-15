@@ -1,3 +1,4 @@
+import path from 'path'
 import fs from 'fs'
 import { build as esbuild } from 'esbuild'
 import spawn from 'cross-spawn'
@@ -15,6 +16,7 @@ export const build = async (file: string, outDir: string) => {
     target: `node${process.version.slice(1)}`,
   })
   const output = result.outputFiles[0]
+  fs.mkdirSync(path.dirname(output.path), { recursive: true })
   fs.writeFileSync(output.path, output.text, 'utf8')
   return {
     get watchFiles() {
