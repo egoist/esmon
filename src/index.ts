@@ -12,7 +12,7 @@ export const build = async (file: string, outDir: string) => {
     platform: 'node',
     metafile: true,
     write: false,
-    target: process.version.slice(1),
+    target: `node${process.version.slice(1)}`,
   })
   const output = result.outputFiles[0]
   fs.writeFileSync(output.path, output.text, 'utf8')
