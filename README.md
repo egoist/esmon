@@ -30,7 +30,7 @@ Note that this command will emit temporary files to `./temp` folder, it's recomm
 esmon build your-scripts.ts
 ```
 
-This command will emit bundled script to `./dist` folder which filename matching the original filename. i.e. here you will get `./dist/your-script.js`.
+This command will emit bundled script to `./dist` folder with a filename matching the original filename. i.e. here you will get `./dist/your-script.js`.
 
 ## Externals
 
