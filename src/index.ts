@@ -3,6 +3,7 @@ import fs from 'fs'
 import { build as esbuild } from 'esbuild'
 import spawn from 'cross-spawn'
 import { watch } from 'chokidar'
+import kill from 'tree-kill'
 
 const readPkg = () => {
   try {
@@ -11,6 +12,17 @@ const readPkg = () => {
     return {}
   }
 }
+
+const killProcess = ({
+  pid,
+  signal = 'SIGTERM',
+}: {
+  pid: number
+  signal?: string | number
+}) =>
+  new Promise<unknown>((resolve) => {
+    kill(pid, signal, resolve)
+  })
 
 export const build = async (file: string, outDir: string) => {
   const pkg = readPkg()
@@ -87,7 +99,7 @@ export const run = async (file: string) => {
     cwd: process.cwd(),
   }).on('all', async (event, filepath) => {
     if (watchFiles.has(filepath)) {
-      cmd.kill()
+      await killProcess({ pid: cmd.pid })
       const result = await build(file, 'temp')
       watchFiles = result.watchFiles
       filepath = result.filepath

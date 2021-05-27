@@ -11,6 +11,7 @@ specifiers:
   esbuild: ^0.11.11
   jest: ^26.6.3
   prettier: ^2.2.1
+  tree-kill: ^1.2.2
   tsup: ^4.8.4
   typescript: ^4.2.3
 
@@ -27,6 +28,7 @@ devDependencies:
   cac: 6.7.2
   jest: 26.6.3
   prettier: 2.2.1
+  tree-kill: 1.2.2
   tsup: 4.8.4_typescript@4.2.3
   typescript: 4.2.3
 
@@ -3742,6 +3744,11 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       punycode: 2.1.1
+    dev: true
+
+  /tree-kill/1.2.2:
+    resolution: {integrity: sha512-L0Orpi8qGpRG//Nd+H90vFB+3iHnue1zSSGmNOOCh1GLJ7rUKVwV2HvijphGQS2UmhUZewS9VgvxYIdgr+fG1A==}
+    hasBin: true
     dev: true
 
   /ts-interface-checker/0.1.13:
