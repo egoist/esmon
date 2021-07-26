@@ -98,6 +98,9 @@ export const run = async (file: string) => {
     ignorePermissionErrors: true,
     cwd: process.cwd(),
   }).on('all', async (event, filepath) => {
+    if(process.platform=='win32'){
+      filepath=filepath.replace(/\\/g,'/')
+    }
     if (watchFiles.has(filepath)) {
       await killProcess({ pid: cmd.pid })
       const result = await build(file, 'temp')
