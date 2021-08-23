@@ -4,10 +4,20 @@ import { build as esbuild } from 'esbuild'
 import spawn from 'cross-spawn'
 import { watch } from 'chokidar'
 import kill from 'tree-kill'
+import { transform } from '@swc/core'
+import { parse } from 'jsonc-parser'
 
 const readPkg = () => {
   try {
     return JSON.parse(fs.readFileSync(path.resolve('package.json'), 'utf8'))
+  } catch (err) {
+    return {}
+  }
+}
+
+const loadTsConfig = () => {
+  try {
+    return parse(fs.readFileSync(path.resolve('tsconfig.json'), 'utf8'))
   } catch (err) {
     return {}
   }
@@ -26,6 +36,8 @@ const killProcess = ({
 
 export const build = async (file: string, outDir: string) => {
   const pkg = readPkg()
+  const tsconfig = loadTsConfig()
+  const compilerOptions = tsconfig.compilerOptions || {}
   const externals = [
     ...Object.keys(pkg.dependencies || {}),
     ...Object.keys(pkg.peerDependencies || {}),
@@ -55,6 +67,46 @@ export const build = async (file: string, outDir: string) => {
                 path: args.path,
                 external: true,
               }
+            }
+          })
+        },
+      },
+      {
+        name: 'swc',
+        setup(build) {
+          if (!compilerOptions.emitDecoratorMetadata) return
+
+          build.onLoad({ filter: /\.[jt]sx?$/ }, async (args) => {
+            const contents = await fs.promises.readFile(args.path, 'utf-8')
+            const isTS = /\.tsx?$/.test(args.path)
+            const isJSX = /sx$/.test(args.path)
+            const result = await transform(contents, {
+              configFile: false,
+              filename: args.path,
+              sourceMaps: 'inline',
+              jsc: {
+                target: 'es2021',
+                keepClassNames: true,
+                parser: isTS
+                  ? {
+                      syntax: 'typescript',
+                      tsx: isJSX,
+                      decorators: true,
+                    }
+                  : {
+                      syntax: 'ecmascript',
+                      jsx: isJSX,
+                      decorators: true,
+                    },
+                transform: {
+                  legacyDecorator: true,
+                  decoratorMetadata: true,
+                },
+              },
+            })
+            return {
+              contents: result.code,
+              loader: 'js',
             }
           })
         },
@@ -98,7 +150,7 @@ export const run = async (file: string) => {
     ignorePermissionErrors: true,
     cwd: process.cwd(),
   }).on('all', async (event, filepath) => {
-    if (watchFiles.has(filepath)) {
+    if (watchFiles.has(filepath) && cmd.pid) {
       await killProcess({ pid: cmd.pid })
       const result = await build(file, 'temp')
       watchFiles = result.watchFiles

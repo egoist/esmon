@@ -32,9 +32,13 @@ esmon build your-scripts.ts
 
 This command will emit bundled script to `./dist` folder with a filename matching the original filename. i.e. here you will get `./dist/your-script.js`.
 
-## Externals
+### Externals
 
 `dependencies` and `peerDependencies` are automatically excluded from the bundled scripts.
+
+### Decorators
+
+Both `experimentalDecorators` and `emitDecoratorMetadata` options in `tsconfig.json` are supported, when you have `emitDecoratorMetadata` enabled we will use `swc` to transform decorators.
 
 ## License
 
