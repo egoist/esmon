@@ -124,7 +124,11 @@ export const build = async (file: string, outDir: string) => {
   }
 }
 
-export const run = async (file: string) => {
+export interface RunOptions {
+  watch?: boolean
+}
+
+export const run = async (file: string, opts: RunOptions = {}) => {
   let { watchFiles, filepath } = await build(file, 'temp')
 
   const startCommand = () => {
@@ -144,18 +148,20 @@ export const run = async (file: string) => {
 
   let cmd = startCommand()
 
-  watch('.', {
-    ignored: '**/{node_modules,dist,temp,.git}/**',
-    ignoreInitial: true,
-    ignorePermissionErrors: true,
-    cwd: process.cwd(),
-  }).on('all', async (event, filepath) => {
-    if (watchFiles.has(filepath) && cmd.pid) {
-      await killProcess({ pid: cmd.pid })
-      const result = await build(file, 'temp')
-      watchFiles = result.watchFiles
-      filepath = result.filepath
-      cmd = startCommand()
-    }
-  })
+  if (opts.watch) {
+    watch('.', {
+      ignored: '**/{node_modules,dist,temp,.git}/**',
+      ignoreInitial: true,
+      ignorePermissionErrors: true,
+      cwd: process.cwd(),
+    }).on('all', async (event, filepath) => {
+      if (watchFiles.has(filepath) && cmd.pid) {
+        await killProcess({ pid: cmd.pid })
+        const result = await build(file, 'temp')
+        watchFiles = result.watchFiles
+        filepath = result.filepath
+        cmd = startCommand()
+      }
+    })
+  }
 }

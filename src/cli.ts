@@ -4,7 +4,16 @@ import { version } from '../package.json'
 
 const cli = cac('esmon')
 
-cli.command('[file]', 'Run a file').action(async (file) => {
+cli
+  .command('[file]', 'Run a file and watch for changes')
+  .action(async (file) => {
+    if (!file) return cli.outputHelp()
+
+    const { run } = await import('./')
+    await run(file, { watch: true })
+  })
+
+cli.command('run [file]', 'Run a file only').action(async (file) => {
   if (!file) return cli.outputHelp()
 
   const { run } = await import('./')

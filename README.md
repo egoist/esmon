@@ -14,7 +14,7 @@ npm i -D esmon
 
 ## Usage
 
-**Run a script: (for development)**
+**Run a script and watch for changes: (for development)**
 
 ```
 esmon your-script.ts
@@ -23,6 +23,8 @@ esmon your-script.ts
 This will also watch all the files imported by `your-script.ts` and re-run it on changes.
 
 Note that this command will emit temporary files to `./temp` folder, it's recommended to add it to your `.gitignore` file.
+
+If you intend to run the file without watching files, you can use the `run` command instead: `esmon run your-script.ts`.
 
 **Build a script: (for production)**
 

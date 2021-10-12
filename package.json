@@ -22,11 +22,11 @@
     "@sucrase/jest-plugin": "^2.0.0",
     "@types/cross-spawn": "^6.0.2",
     "@types/jest": "^26.0.20",
-    "cac": "^6.7.2",
+    "cac": "^6.7.9",
     "jest": "^26.6.3",
     "prettier": "^2.2.1",
     "tree-kill": "^1.2.2",
-    "tsup": "^4.8.4",
+    "tsup": "^5.4.0",
     "typescript": "^4.2.3"
   },
   "dependencies": {
