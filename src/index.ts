@@ -34,19 +34,25 @@ const killProcess = ({
     kill(pid, signal, resolve)
   })
 
-export const build = async (file: string, outDir: string) => {
+export interface BuildOptions {
+  outDir: string
+  bundleDevDeps?: boolean
+}
+
+export const build = async (file: string, opts: BuildOptions) => {
   const pkg = readPkg()
   const tsconfig = loadTsConfig()
   const compilerOptions = tsconfig.compilerOptions || {}
   const externals = [
     ...Object.keys(pkg.dependencies || {}),
     ...Object.keys(pkg.peerDependencies || {}),
+    ...(opts.bundleDevDeps ? [] : Object.keys(pkg.devDependencies || {})),
   ]
   const result = await esbuild({
     entryPoints: [file],
     format: 'cjs',
     bundle: true,
-    outdir: outDir,
+    outdir: opts.outDir,
     platform: 'node',
     metafile: true,
     write: false,
@@ -124,12 +130,12 @@ export const build = async (file: string, outDir: string) => {
   }
 }
 
-export interface RunOptions {
-  watch?: boolean
-}
-
-export const run = async (file: string, opts: RunOptions = {}) => {
-  let { watchFiles, filepath } = await build(file, 'temp')
+export const run = async (
+  file: string,
+  buildOpts: BuildOptions,
+  shouldWatch?: boolean,
+) => {
+  let { watchFiles, filepath } = await build(file, buildOpts)
 
   const startCommand = () => {
     const cmd = spawn('node', [filepath], {
@@ -148,7 +154,7 @@ export const run = async (file: string, opts: RunOptions = {}) => {
 
   let cmd = startCommand()
 
-  if (opts.watch) {
+  if (shouldWatch) {
     watch('.', {
       ignored: '**/{node_modules,dist,temp,.git}/**',
       ignoreInitial: true,
@@ -157,7 +163,7 @@ export const run = async (file: string, opts: RunOptions = {}) => {
     }).on('all', async (event, filepath) => {
       if (watchFiles.has(filepath) && cmd.pid) {
         await killProcess({ pid: cmd.pid })
-        const result = await build(file, 'temp')
+        const result = await build(file, buildOpts)
         watchFiles = result.watchFiles
         filepath = result.filepath
         cmd = startCommand()
