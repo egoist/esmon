@@ -36,7 +36,7 @@ This command will emit bundled script to `./dist` folder with a filename matchin
 
 ### Externals
 
-`dependencies` and `peerDependencies` are automatically excluded from the bundled scripts.
+`dependencies`, `devDependencies` and `peerDependencies` are automatically excluded from the bundled scripts. If you wish to bundle `devDependencies`, you can pass the `--bundleDevDeps` flag.
 
 ### Decorators
 
