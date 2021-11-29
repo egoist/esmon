@@ -36,6 +36,7 @@ export interface BuildOptions {
   outDir: string
   bundleDevDeps?: boolean
   watch?: boolean
+  esm?: boolean
 }
 
 export const build = async (
@@ -87,9 +88,13 @@ export const build = async (
     }
   }
 
+  const inject: string[] = []
+  if (opts.esm) {
+    inject.push(path.join(__dirname, '../assets/cjs-shims.js'))
+  }
   const result = await esbuild({
     entryPoints: [file],
-    format: 'esm',
+    format: opts.esm ? 'esm' : 'cjs',
     bundle: true,
     outdir: opts.outDir,
     platform: 'node',
@@ -98,9 +103,9 @@ export const build = async (
     target: `node${process.version.slice(1)}`,
     incremental: opts.watch,
     outExtension: {
-      '.js': '.mjs',
+      '.js': opts.esm ? '.mjs' : '.cjs',
     },
-    inject: [path.join(__dirname, '../assets/cjs-shims.js')],
+    inject,
     plugins: [
       {
         name: 'externalize-deps',

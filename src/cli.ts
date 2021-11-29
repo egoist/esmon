@@ -31,6 +31,7 @@ export function startCLI() {
   })
 
   cli.option('--bundleDevDeps', 'Bundle devDependencies in package.json')
+  cli.option('--esm', 'Output as esm')
 
   cli.version(version)
   cli.help()

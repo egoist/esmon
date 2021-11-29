@@ -32,7 +32,11 @@ If you intend to run the file without watching files, you can use the `run` comm
 esmon build your-scripts.ts
 ```
 
-This command will emit bundled script in esm format to `./dist` folder with a filename matching the original filename. i.e. here you will get `./dist/your-script.mjs`.
+This command will emit bundled script in esm format to `./dist` folder with a filename matching the original filename. i.e. here you will get `./dist/your-script.cjs`.
+
+### ESM
+
+You can also output ESM format with flag `--esm`, the output extension will be `.mjs`. `__dirname` and `__filename` will also be shimmed.
 
 ### Externals
 
