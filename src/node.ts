@@ -144,11 +144,8 @@ export const run = async (
         NPM_CONFIG_COLOR: 'always',
         ...process.env,
       },
-      stdio: 'pipe',
+      stdio: 'inherit',
     })
-    cmd.stdout?.pipe(process.stdout)
-    cmd.stderr?.pipe(process.stderr)
-    cmd.stdin?.pipe(process.stdin)
     return cmd
   }
 
