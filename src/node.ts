@@ -1,10 +1,8 @@
 import path from 'path'
 import fs from 'fs'
-import { build as esbuild } from 'esbuild'
+import { build as esbuild, BuildResult } from 'esbuild'
 import spawn from 'cross-spawn'
-import { watch } from 'chokidar'
 import kill from 'tree-kill'
-import { transform } from '@swc/core'
 import { parse } from 'jsonc-parser'
 
 const readPkg = () => {
@@ -37,9 +35,13 @@ const killProcess = ({
 export interface BuildOptions {
   outDir: string
   bundleDevDeps?: boolean
+  watch?: boolean
 }
 
-export const build = async (file: string, opts: BuildOptions) => {
+export const build = async (
+  file: string,
+  opts: BuildOptions,
+): Promise<{ watchFiles: Set<string>; outfile: string }> => {
   const pkg = readPkg()
   const tsconfig = loadTsConfig()
   const compilerOptions = tsconfig.compilerOptions || {}
@@ -48,15 +50,57 @@ export const build = async (file: string, opts: BuildOptions) => {
     ...Object.keys(pkg.peerDependencies || {}),
     ...(opts.bundleDevDeps ? [] : Object.keys(pkg.devDependencies || {})),
   ]
+
+  const output = async (result: BuildResult) => {
+    if (!result.outputFiles) {
+      throw new Error(`no output files`)
+    }
+    if (!result.metafile) {
+      throw new Error(`no metafile`)
+    }
+
+    // Write files
+    await Promise.all(
+      result.outputFiles.map(async (outfile) => {
+        fs.promises.mkdir(path.dirname(outfile.path), { recursive: true })
+        fs.promises.writeFile(outfile.path, outfile.text, 'utf8')
+      }),
+    )
+
+    // Find the output file
+    let outfile: string | undefined
+    for (const filename of Object.keys(result.metafile.outputs)) {
+      const file = result.metafile.outputs[filename]
+      if (file.entryPoint) {
+        outfile = path.resolve(filename)
+      }
+    }
+    if (!outfile) {
+      throw new Error(`cannot find the output file`)
+    }
+
+    return {
+      get watchFiles() {
+        return new Set(Object.keys(result.metafile?.inputs || {}))
+      },
+      outfile,
+    }
+  }
+
   const result = await esbuild({
     entryPoints: [file],
-    format: 'cjs',
+    format: 'esm',
     bundle: true,
     outdir: opts.outDir,
     platform: 'node',
     metafile: true,
     write: false,
     target: `node${process.version.slice(1)}`,
+    incremental: opts.watch,
+    outExtension: {
+      '.js': '.mjs',
+    },
+    inject: [path.join(__dirname, '../assets/cjs-shims.js')],
     plugins: [
       {
         name: 'externalize-deps',
@@ -79,8 +123,10 @@ export const build = async (file: string, opts: BuildOptions) => {
       },
       {
         name: 'swc',
-        setup(build) {
+        async setup(build) {
           if (!compilerOptions.emitDecoratorMetadata) return
+
+          const { transform } = await import('@swc/core')
 
           build.onLoad({ filter: /\.[jt]sx?$/ }, async (args) => {
             const contents = await fs.promises.readFile(args.path, 'utf-8')
@@ -119,26 +165,14 @@ export const build = async (file: string, opts: BuildOptions) => {
       },
     ],
   })
-  const output = result.outputFiles[0]
-  fs.mkdirSync(path.dirname(output.path), { recursive: true })
-  fs.writeFileSync(output.path, output.text, 'utf8')
-  return {
-    get watchFiles() {
-      return new Set(Object.keys(result.metafile?.inputs || {}))
-    },
-    filepath: output.path,
-  }
+  return output(result)
 }
 
-export const run = async (
-  file: string,
-  buildOpts: BuildOptions,
-  shouldWatch?: boolean,
-) => {
-  let { watchFiles, filepath } = await build(file, buildOpts)
+export const run = async (file: string, buildOpts: BuildOptions) => {
+  let { outfile, watchFiles } = await build(file, buildOpts)
 
   const startCommand = () => {
-    const cmd = spawn('node', [filepath], {
+    const cmd = spawn('node', [path.relative(process.cwd(), outfile)], {
       env: {
         FORCE_COLOR: '1',
         NPM_CONFIG_COLOR: 'always',
@@ -151,7 +185,8 @@ export const run = async (
 
   let cmd = startCommand()
 
-  if (shouldWatch) {
+  if (buildOpts.watch) {
+    const { watch } = await import('chokidar')
     watch('.', {
       ignored: '**/{node_modules,dist,temp,.git}/**',
       ignoreInitial: true,
@@ -162,7 +197,7 @@ export const run = async (
         await killProcess({ pid: cmd.pid })
         const result = await build(file, buildOpts)
         watchFiles = result.watchFiles
-        filepath = result.filepath
+        outfile = result.outfile
         cmd = startCommand()
       }
     })

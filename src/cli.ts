@@ -10,7 +10,7 @@ export function startCLI() {
       if (!file) return cli.outputHelp()
 
       const { run } = await import('./node')
-      await run(file, { outDir: 'temp', ...opts }, true)
+      await run(file, { outDir: 'temp', watch: true, ...opts })
     })
 
   cli.command('run [file]', 'Run a file only').action(async (file, opts) => {
